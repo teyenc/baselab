@@ -1,2 +1,3 @@
-//! storage/mod.rs — re-export page module
+//! storage/mod.rs — re-export modules
 pub mod page;
+pub mod disk;

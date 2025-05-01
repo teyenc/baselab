@@ -29,7 +29,7 @@ const SLOT_SIZE: usize = size_of::<Slot>();
 
 /// A single 8 KiB page with a simple slot‐array / tuple‐heap layout.
 pub struct Page {
-    raw: [u8; BLCKSZ],
+    pub raw: [u8; BLCKSZ],
 }
 
 impl Page {

@@ -30,7 +30,7 @@ fn full_cycle() {
     // Before compaction, we might not have enough space
     assert!(page.free_space() < 128);
 
-    // After compaction we should have freed space
+    // After compaction, we should have freed space
     assert_eq!(page.compact(), true);
     assert!(page.free_space() >= 128);
 }
@@ -96,7 +96,7 @@ fn test_edge_cases() {
     assert!(page.get_item(999).is_none());
     assert!(!page.delete_item(999));
     
-    // Test adding oversized item
+    // Test adding oversize item
     let big_data = vec![0u8; 9000]; // Larger than page size
     assert!(page.add_item(&big_data).is_none());
     

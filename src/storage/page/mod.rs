@@ -1,2 +1,2 @@
 pub mod page;
-pub use page::Page;
+pub use page::{Page, BLCKSZ};
