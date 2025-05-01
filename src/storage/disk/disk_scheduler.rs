@@ -47,6 +47,7 @@ impl DiskScheduler {
                     DiskOp::Read(pid) => {
                         let mut buf = vec![0u8; BLCKSZ];
                         let result = mgr.read_page(pid, &mut buf).map(|_| buf);
+                        // Ignore send errors - receiver may have been dropped
                         let _ = req.resp.send(DiskResult::Read(result));
                     }
                     DiskOp::Write(pid, data) => {
@@ -76,11 +77,17 @@ impl DiskScheduler {
             op: DiskOp::Read(page_id),
             resp: resp_tx,
         };
-        self.tx.send(req).unwrap();
-        match resp_rx.recv().unwrap() {
+        
+        self.tx.send(req).map_err(|_| 
+            io::Error::new(io::ErrorKind::BrokenPipe, "Disk scheduler thread has terminated")
+        )?;
+        
+        resp_rx.recv().map_err(|_| 
+            io::Error::new(io::ErrorKind::BrokenPipe, "Failed to receive response from disk thread")
+        ).and_then(|result| match result {
             DiskResult::Read(r) => r,
-            _ => unreachable!("mismatched response variant"),
-        }
+            _ => Err(io::Error::new(io::ErrorKind::Other, "Mismatched response variant")),
+        })
     }
 
     /// Write a full‐size buffer to disk.
@@ -90,11 +97,17 @@ impl DiskScheduler {
             op: DiskOp::Write(page_id, buf),
             resp: resp_tx,
         };
-        self.tx.send(req).unwrap();
-        match resp_rx.recv().unwrap() {
+        
+        self.tx.send(req).map_err(|_| 
+            io::Error::new(io::ErrorKind::BrokenPipe, "Disk scheduler thread has terminated")
+        )?;
+        
+        resp_rx.recv().map_err(|_| 
+            io::Error::new(io::ErrorKind::BrokenPipe, "Failed to receive response from disk thread")
+        ).and_then(|result| match result {
             DiskResult::Write(r) => r,
-            _ => unreachable!("mismatched response variant"),
-        }
+            _ => Err(io::Error::new(io::ErrorKind::Other, "Mismatched response variant")),
+        })
     }
 
     /// Flush all pending writes to disk.
@@ -104,29 +117,38 @@ impl DiskScheduler {
             op: DiskOp::Sync,
             resp: resp_tx,
         };
-        self.tx.send(req).unwrap();
-        match resp_rx.recv().unwrap() {
+        
+        self.tx.send(req).map_err(|_| 
+            io::Error::new(io::ErrorKind::BrokenPipe, "Disk scheduler thread has terminated")
+        )?;
+        
+        resp_rx.recv().map_err(|_| 
+            io::Error::new(io::ErrorKind::BrokenPipe, "Failed to receive response from disk thread")
+        ).and_then(|result| match result {
             DiskResult::Sync(r) => r,
-            _ => unreachable!("mismatched response variant"),
-        }
+            _ => Err(io::Error::new(io::ErrorKind::Other, "Mismatched response variant")),
+        })
     }
 
     pub fn allocate_page(&self) -> io::Result<PageId> {
-    let (resp_tx, resp_rx) = mpsc::channel();
-    let req = Request {
-        op: DiskOp::AllocatePage,
-        resp: resp_tx,
-    };
-    self.tx.send(req).unwrap();
-    match resp_rx.recv().unwrap() {
-        DiskResult::AllocatePage(r) => r,
-        _ => unreachable!("mismatched response variant"),
+        let (resp_tx, resp_rx) = mpsc::channel();
+        let req = Request {
+            op: DiskOp::AllocatePage,
+            resp: resp_tx,
+        };
+        
+        self.tx.send(req).map_err(|_| 
+            io::Error::new(io::ErrorKind::BrokenPipe, "Disk scheduler thread has terminated")
+        )?;
+        
+        resp_rx.recv().map_err(|_| 
+            io::Error::new(io::ErrorKind::BrokenPipe, "Failed to receive response from disk thread")
+        ).and_then(|result| match result {
+            DiskResult::AllocatePage(r) => r,
+            _ => Err(io::Error::new(io::ErrorKind::Other, "Mismatched response variant")),
+        })
     }
 }
-
-}
-
-
 
 // for testing pupose
 impl Clone for DiskScheduler {

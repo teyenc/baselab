@@ -62,7 +62,9 @@ impl DiskManager {
         
         // Safely access the file for reading
         let offset = Self::page_offset(page_id);
-        let mut file = self.db_file.lock().unwrap();
+        let file_lock = self.db_file.lock()
+            .map_err(|_| io::Error::new(io::ErrorKind::Other, "Failed to acquire file lock"))?;
+        let mut file = file_lock;
         file.seek(SeekFrom::Start(offset))?;
         file.read_exact(buf)?;
         
@@ -90,7 +92,9 @@ impl DiskManager {
         
         // Safely access the file for writing
         let offset = Self::page_offset(page_id);
-        let mut file = self.db_file.lock().unwrap();
+        let file_lock = self.db_file.lock()
+            .map_err(|_| io::Error::new(io::ErrorKind::Other, "Failed to acquire file lock"))?;
+        let mut file = file_lock;
         file.seek(SeekFrom::Start(offset))?;
         file.write_all(buf)?;
         
@@ -110,6 +114,8 @@ impl DiskManager {
     
     /// Flushes all changes to disk (thread-safe)
     pub fn sync(&self) -> io::Result<()> {
-        self.db_file.lock().unwrap().sync_all()
+        let file_lock = self.db_file.lock()
+            .map_err(|_| io::Error::new(io::ErrorKind::Other, "Failed to acquire file lock"))?;
+        file_lock.sync_all()
     }
 }
