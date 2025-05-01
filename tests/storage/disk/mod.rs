@@ -1,1 +1,2 @@
 mod disk_manager_tests;
+mod disk_scheduler_tests;
