@@ -14,6 +14,7 @@ A work-in-progress relational database implementation built from scratch in Rust
 ### Query Engine
 - ⏳ **Query Planner**: Optimize and plan query execution
 - ⏳ **Query Executor**: Execute planned queries
+  
 (I built Query Planner and Executor in [this project](https://15445.courses.cs.cmu.edu/spring2025/project3/) but didn't have time to rewrite in Rust yet)
 
 ### Concurrency Control ⏳
